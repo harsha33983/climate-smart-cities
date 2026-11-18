@@ -1,0 +1,61 @@
+
+project:
+  name: "Climate & Smart Cities Intelligence System"
+  seed: 42
+  device: "cpu"
+
+traffic:
+  dataset_name: "METR-LA"
+  raw_dir: "data/raw/traffic"
+  processed_dir: "data/processed/traffic"
+  models_dir: "models/traffic"
+  outputs_dir: "outputs"
+  
+  urls:
+    h5_data: "https://raw.githubusercontent.com/leilin-research/GCGRNN/master/data/METR-LA_traffic_speed/metr-la.h5"
+    sensor_ids: "https://raw.githubusercontent.com/chnsh/DCRNN_PyTorch/master/data/sensor_graph/graph_sensor_ids.txt"
+    sensor_locations: "https://raw.githubusercontent.com/chnsh/DCRNN_PyTorch/master/data/sensor_graph/graph_sensor_locations.csv"
+    distances: "https://raw.githubusercontent.com/chnsh/DCRNN_PyTorch/master/data/sensor_graph/distances_la_2012.csv"
+    adj_mx: "https://raw.githubusercontent.com/chnsh/DCRNN_PyTorch/master/data/sensor_graph/adj_mx.pkl"
+
+  preprocessing:
+    seq_len: 12        # 12 steps * 5 min = 60 min historical input
+    horizon_30min: 6   # 6 steps * 5 min = 30 min forecast
+    horizon_60min: 12  # 12 steps * 5 min = 60 min forecast
+    train_ratio: 0.70
+    val_ratio: 0.10
+    test_ratio: 0.20
+    distance_threshold: 0.1
+
+  training:
+    batch_size: 64
+    epochs: 15
+    lr: 0.002
+    weight_decay: 0.0001
+    early_stopping_patience: 4
+
+wildfire:
+  raw_dir: "data/raw/wildfire"
+  processed_dir: "data/processed/wildfire"
+  models_dir: "models/wildfire"
+  outputs_dir: "outputs"
+
+  urls:
+    firms_modis: "https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MODIS_C6_1_USA_contiguous_and_Hawaii_7d.csv"
+    nasa_power_base: "https://power.larc.nasa.gov/api/temporal/daily/point"
+
+  preprocessing:
+    train_ratio: 0.70
+    val_ratio: 0.10
+    test_ratio: 0.20
+    patch_size: 16      # 16x16 spatial environmental grid
+    num_channels: 5     # elevation, slope, temp, humidity, wind
+
+  training:
+    batch_size: 32
+    epochs: 15
+    lr: 0.001
+    weight_decay: 0.0001
+    early_stopping_patience: 4
+    rf_estimators: 100
+    xgb_estimators: 100

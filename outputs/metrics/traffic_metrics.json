@@ -1,0 +1,53 @@
+{
+    "Baseline": {
+        "model": "Baseline (Persistence)",
+        "horizon_30min": {
+            "mae": 3.767,
+            "rmse": 7.643,
+            "mape": 9.785,
+            "r2": 0.6881
+        },
+        "horizon_60min": {
+            "mae": 4.868,
+            "rmse": 9.846,
+            "mape": 13.274,
+            "r2": 0.4823
+        },
+        "inference_time_sec": 0.0042,
+        "latency_ms_per_sample": 0.001
+    },
+    "LSTM": {
+        "model": "LSTM",
+        "horizon_30min": {
+            "mae": 4.189,
+            "rmse": 7.443,
+            "mape": 12.191,
+            "r2": 0.7042
+        },
+        "horizon_60min": {
+            "mae": 4.416,
+            "rmse": 7.956,
+            "mape": 13.123,
+            "r2": 0.662
+        },
+        "inference_time_sec": 0.2379,
+        "latency_ms_per_sample": 0.07
+    },
+    "ST-GNN": {
+        "model": "ST-GNN",
+        "horizon_30min": {
+            "mae": 6.321,
+            "rmse": 9.583,
+            "mape": 17.568,
+            "r2": 0.5097
+        },
+        "horizon_60min": {
+            "mae": 7.015,
+            "rmse": 10.484,
+            "mape": 20.205,
+            "r2": 0.4131
+        },
+        "inference_time_sec": 23.9016,
+        "latency_ms_per_sample": 6.997
+    }
+}

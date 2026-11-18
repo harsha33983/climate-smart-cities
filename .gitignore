@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+venv/
+env/
+.venv/
+ENV/
+
+# Large datasets & binary serialization (>100MB exceeds GitHub limit)
+data/raw/traffic/*.h5
+data/processed/traffic/*.pkl
+data/processed/wildfire/*.pkl
+outputs/predictions/*.pkl
+*.zip
+*.tar.gz
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
