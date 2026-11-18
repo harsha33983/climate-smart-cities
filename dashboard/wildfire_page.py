@@ -17,21 +17,40 @@ from streamlit_folium import folium_static
 
 # Ensure package root is in sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.common.utilities import load_metrics
+from src.common.utilities import load_metrics, resolve_path
 from src.wildfire.predict import WildfirePredictor
 
 
 @st.cache_data
 def load_wildfire_predictions():
-    """Load pre-evaluated wildfire test set predictions bundle."""
-    pred_path = os.path.join("outputs", "predictions", "wildfire_test_predictions.pkl")
-    if not os.path.exists(pred_path):
-        pred_path = os.path.join("climate-smart-cities", pred_path)
-    if not os.path.exists(pred_path):
-        return None
-    with open(pred_path, "rb") as f:
-        data = pickle.load(f)
-    return data
+    """Load pre-evaluated wildfire test set predictions bundle with robust multi-directory fallback."""
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    candidate_paths = [
+        os.path.join(base_dir, "outputs", "predictions", "wildfire_test_predictions.pkl"),
+        os.path.join(os.getcwd(), "climate-smart-cities", "outputs", "predictions", "wildfire_test_predictions.pkl"),
+        os.path.join(os.getcwd(), "outputs", "predictions", "wildfire_test_predictions.pkl"),
+        os.path.join("outputs", "predictions", "wildfire_test_predictions.pkl"),
+        os.path.join("climate-smart-cities", "outputs", "predictions", "wildfire_test_predictions.pkl"),
+    ]
+    for pred_path in candidate_paths:
+        if os.path.exists(pred_path):
+            try:
+                with open(pred_path, "rb") as f:
+                    return pickle.load(f)
+            except Exception:
+                continue
+
+    # Fallback: compute predictions dynamically if not already saved
+    try:
+        from src.wildfire.evaluate import main as run_eval
+        run_eval()
+        for pred_path in candidate_paths:
+            if os.path.exists(pred_path):
+                with open(pred_path, "rb") as f:
+                    return pickle.load(f)
+    except Exception as e:
+        st.error(f"Error evaluating wildfire predictions: {e}")
+    return None
 
 
 @st.cache_resource
@@ -223,7 +242,9 @@ def render_wildfire_page():
             )
             st.plotly_chart(fig_box, use_container_width=True)
 
-        st.image("outputs/plots/wildfire_feature_importance.png", caption="XGBoost Feature Importance: Top Environmental Drivers of Fire Vulnerability", use_column_width=True)
+        p_feat = resolve_path(os.path.join("outputs", "plots", "wildfire_feature_importance.png"))
+        if os.path.exists(p_feat):
+            st.image(p_feat, caption="XGBoost Feature Importance: Top Environmental Drivers of Fire Vulnerability", use_column_width=True)
 
     with tab_metrics:
         st.subheader("Model Evaluation Benchmark on Unseen Test Split (600 Sites)")
@@ -249,8 +270,14 @@ def render_wildfire_page():
 
         col_m1, col_m2 = st.columns(2)
         with col_m1:
-            st.image("outputs/plots/wildfire_roc_curves.png", caption="Receiver Operating Characteristic (ROC) Curves", use_column_width=True)
+            p_roc = resolve_path(os.path.join("outputs", "plots", "wildfire_roc_curves.png"))
+            if os.path.exists(p_roc):
+                st.image(p_roc, caption="Receiver Operating Characteristic (ROC) Curves", use_column_width=True)
         with col_m2:
-            st.image("outputs/plots/wildfire_pr_curves.png", caption="Precision-Recall (PR) Curves", use_column_width=True)
+            p_pr = resolve_path(os.path.join("outputs", "plots", "wildfire_pr_curves.png"))
+            if os.path.exists(p_pr):
+                st.image(p_pr, caption="Precision-Recall (PR) Curves", use_column_width=True)
 
-        st.image("outputs/plots/wildfire_confusion_matrices.png", caption="Confusion Matrices across All 4 Wildfire Models", use_column_width=True)
+        p_cm = resolve_path(os.path.join("outputs", "plots", "wildfire_confusion_matrices.png"))
+        if os.path.exists(p_cm):
+            st.image(p_cm, caption="Confusion Matrices across All 4 Wildfire Models", use_column_width=True)

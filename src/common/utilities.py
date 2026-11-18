@@ -50,9 +50,25 @@ def save_metrics(metrics: dict, file_path: str):
     print(f"[Utilities] Saved metrics to {file_path}")
 
 
+def resolve_path(rel_path: str) -> str:
+    """Resolve a relative path robustly regardless of current working directory."""
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    candidates = [
+        os.path.join(project_root, rel_path),
+        os.path.join(os.getcwd(), "climate-smart-cities", rel_path),
+        os.path.join(os.getcwd(), rel_path),
+        rel_path
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return os.path.join(project_root, rel_path)
+
+
 def load_metrics(file_path: str) -> dict:
-    """Load metrics dictionary from JSON file."""
-    if not os.path.exists(file_path):
+    """Load metrics dictionary from JSON file with multi-directory resolution."""
+    resolved = resolve_path(file_path)
+    if not os.path.exists(resolved):
         return {}
-    with open(file_path, "r") as f:
+    with open(resolved, "r") as f:
         return json.load(f)

@@ -16,21 +16,40 @@ from streamlit_folium import folium_static
 
 # Ensure package root is in sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.common.utilities import load_metrics
+from src.common.utilities import load_metrics, resolve_path
 from src.traffic.predict import TrafficPredictor
 
 
 @st.cache_data
 def load_traffic_predictions():
-    """Load pre-evaluated test set predictions bundle."""
-    pred_path = os.path.join("outputs", "predictions", "traffic_test_predictions.pkl")
-    if not os.path.exists(pred_path):
-        pred_path = os.path.join("climate-smart-cities", pred_path)
-    if not os.path.exists(pred_path):
-        return None
-    with open(pred_path, "rb") as f:
-        data = pickle.load(f)
-    return data
+    """Load pre-evaluated test set predictions bundle with robust multi-directory fallback."""
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    candidate_paths = [
+        os.path.join(base_dir, "outputs", "predictions", "traffic_test_predictions.pkl"),
+        os.path.join(os.getcwd(), "climate-smart-cities", "outputs", "predictions", "traffic_test_predictions.pkl"),
+        os.path.join(os.getcwd(), "outputs", "predictions", "traffic_test_predictions.pkl"),
+        os.path.join("outputs", "predictions", "traffic_test_predictions.pkl"),
+        os.path.join("climate-smart-cities", "outputs", "predictions", "traffic_test_predictions.pkl"),
+    ]
+    for pred_path in candidate_paths:
+        if os.path.exists(pred_path):
+            try:
+                with open(pred_path, "rb") as f:
+                    return pickle.load(f)
+            except Exception:
+                continue
+    
+    # Fallback: compute predictions dynamically if not already saved
+    try:
+        from src.traffic.evaluate import main as run_eval
+        run_eval()
+        for pred_path in candidate_paths:
+            if os.path.exists(pred_path):
+                with open(pred_path, "rb") as f:
+                    return pickle.load(f)
+    except Exception as e:
+        st.error(f"Error evaluating traffic predictions: {e}")
+    return None
 
 
 @st.cache_resource
@@ -270,6 +289,10 @@ def render_traffic_page():
 
         col_p1, col_p2 = st.columns(2)
         with col_p1:
-            st.image("outputs/plots/traffic_horizon_comparison.png", caption="Multi-Horizon Forecast Error (30m vs 60m)", use_column_width=True)
+            p1 = resolve_path(os.path.join("outputs", "plots", "traffic_horizon_comparison.png"))
+            if os.path.exists(p1):
+                st.image(p1, caption="Multi-Horizon Forecast Error (30m vs 60m)", use_column_width=True)
         with col_p2:
-            st.image("outputs/plots/traffic_loss_curves.png", caption="Training & Validation Loss Convergence", use_column_width=True)
+            p2 = resolve_path(os.path.join("outputs", "plots", "traffic_loss_curves.png"))
+            if os.path.exists(p2):
+                st.image(p2, caption="Training & Validation Loss Convergence", use_column_width=True)
