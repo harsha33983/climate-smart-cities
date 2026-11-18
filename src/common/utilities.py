@@ -25,13 +25,29 @@ def set_seed(seed: int = 42):
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
-    """Load YAML configuration file."""
-    if not os.path.exists(config_path):
-        alt_path = os.path.join(os.path.dirname(__file__), "..", "..", config_path)
-        if os.path.exists(alt_path):
-            config_path = alt_path
+    """Load YAML configuration file with robust absolute root resolution."""
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    if not os.path.isabs(config_path):
+        candidate = os.path.join(project_root, config_path)
+        if os.path.exists(candidate):
+            config_path = candidate
+        elif not os.path.exists(config_path):
+            alt_path = os.path.join(os.getcwd(), "climate-smart-cities", config_path)
+            if os.path.exists(alt_path):
+                config_path = alt_path
+
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
+
+    # Convert all module relative directories to absolute paths anchored to project_root
+    for module in ["traffic", "wildfire"]:
+        if module in config:
+            for key in ["raw_dir", "processed_dir", "models_dir", "outputs_dir"]:
+                if key in config[module]:
+                    val = config[module][key]
+                    if not os.path.isabs(val):
+                        config[module][key] = os.path.normpath(os.path.join(project_root, val))
+
     return config
 
 

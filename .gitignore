@@ -10,11 +10,9 @@ env/
 .venv/
 ENV/
 
-# Large datasets & binary serialization (>100MB exceeds GitHub limit)
+# Large files exceeding GitHub limit (>100MB)
 data/raw/traffic/*.h5
-data/processed/traffic/*.pkl
-data/processed/wildfire/*.pkl
-outputs/predictions/*.pkl
+data/processed/traffic/traffic_processed.pkl
 *.zip
 *.tar.gz
 
