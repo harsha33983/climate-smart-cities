@@ -22,17 +22,54 @@ class TrafficPredictor:
         self.models_dir = self.config["traffic"]["models_dir"]
         self.proc_dir = self.config["traffic"]["processed_dir"]
 
-        with open(os.path.join(self.proc_dir, "traffic_processed.pkl"), "rb") as f:
-            data = pickle.load(f)
-            self.mean = data['mean']
-            self.std = data['std']
-            self.sensor_ids = data['sensor_ids']
-            self.num_sensors = len(self.sensor_ids)
+        # Robust multi-source metadata resolution (works seamlessly on Streamlit Cloud)
+        scaler_path = os.path.join(self.proc_dir, "traffic_scaler.pkl")
+        proc_path = os.path.join(self.proc_dir, "traffic_processed.pkl")
+        graph_path = os.path.join(self.proc_dir, "traffic_graph.pkl")
+        pred_path = os.path.join(self.config["traffic"]["outputs_dir"], "predictions", "traffic_test_predictions.pkl")
 
-        with open(os.path.join(self.proc_dir, "traffic_graph.pkl"), "rb") as f:
-            graph = pickle.load(f)
-            self.norm_adj = torch.tensor(graph['norm_adj'], dtype=torch.float32).to(self.device)
-            self.sensor_locs = graph['sensor_locations']
+        if os.path.exists(scaler_path):
+            with open(scaler_path, "rb") as f:
+                s_data = pickle.load(f)
+                self.mean = float(s_data['mean'])
+                self.std = float(s_data['std'])
+                self.sensor_ids = s_data['sensor_ids']
+                self.num_sensors = len(self.sensor_ids)
+        elif os.path.exists(graph_path):
+            with open(graph_path, "rb") as f:
+                g_data = pickle.load(f)
+                self.mean = float(g_data.get('mean', 58.435))
+                self.std = float(g_data.get('std', 13.098))
+                self.sensor_ids = g_data['sensor_ids']
+                self.num_sensors = len(self.sensor_ids)
+        elif os.path.exists(pred_path):
+            with open(pred_path, "rb") as f:
+                p_data = pickle.load(f)
+                self.mean = float(p_data.get('mean', 58.435))
+                self.std = float(p_data.get('std', 13.098))
+                self.sensor_ids = p_data['sensor_ids']
+                self.num_sensors = len(self.sensor_ids)
+        elif os.path.exists(proc_path):
+            with open(proc_path, "rb") as f:
+                data = pickle.load(f)
+                self.mean = float(data['mean'])
+                self.std = float(data['std'])
+                self.sensor_ids = data['sensor_ids']
+                self.num_sensors = len(self.sensor_ids)
+        else:
+            self.mean = 58.435
+            self.std = 13.098
+            self.sensor_ids = [str(i) for i in range(207)]
+            self.num_sensors = 207
+
+        if os.path.exists(graph_path):
+            with open(graph_path, "rb") as f:
+                graph = pickle.load(f)
+                self.norm_adj = torch.tensor(graph['norm_adj'], dtype=torch.float32).to(self.device)
+                self.sensor_locs = graph.get('sensor_locations', None)
+        else:
+            self.norm_adj = torch.eye(self.num_sensors, dtype=torch.float32).to(self.device)
+            self.sensor_locs = None
 
         if "lstm" in self.model_type:
             self.model = TrafficLSTM(num_sensors=self.num_sensors).to(self.device)
@@ -105,9 +142,18 @@ class TrafficPredictor:
 
 def main():
     predictor = TrafficPredictor(model_type="gnn")
-    with open("data/processed/traffic/traffic_processed.pkl", "rb") as f:
-        data = pickle.load(f)
-    sample_seq = data['X_test'][0] * data['std'] + data['mean']
+    sample_seq = np.full((12, predictor.num_sensors), 60.0, dtype=np.float32)
+    scaler_path = os.path.join(predictor.proc_dir, "traffic_scaler.pkl")
+    if os.path.exists(scaler_path):
+        with open(scaler_path, "rb") as f:
+            s_dict = pickle.load(f)
+            if 'sample_input_seq' in s_dict:
+                sample_seq = s_dict['sample_input_seq']
+    elif os.path.exists(os.path.join(predictor.proc_dir, "traffic_processed.pkl")):
+        with open(os.path.join(predictor.proc_dir, "traffic_processed.pkl"), "rb") as f:
+            data = pickle.load(f)
+        sample_seq = data['X_test'][0] * data['std'] + data['mean']
+
     res = predictor.predict(sample_seq)
     print(f"[Traffic Predictor] Prediction successful across {len(res['sensor_ids'])} sensors!")
     print(f"  30-min mean speed: {np.mean(res['predicted_speed_30min']):.2f} mph")

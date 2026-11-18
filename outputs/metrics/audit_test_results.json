@@ -2,31 +2,31 @@
   "test_1": {
     "name": "Dataset Loading Verification",
     "status": "PASS",
-    "elapsed_sec": 0.219,
+    "elapsed_sec": 0.264,
     "details": "METR-LA: 34272x207 | Wildfire: 2400 records"
   },
   "test_2": {
     "name": "Preprocessing Pipeline Verification",
     "status": "PASS",
-    "elapsed_sec": 0.015,
+    "elapsed_sec": 0.009,
     "details": "Traffic: (11984, 12, 207) | Wildfire Image Patches: (1680, 5, 16, 16)"
   },
   "test_3": {
     "name": "Model Architecture Initialization",
     "status": "PASS",
-    "elapsed_sec": 0.027,
+    "elapsed_sec": 0.008,
     "details": "All 4 deep architectures initialized with exact matching layer specifications"
   },
   "test_4": {
     "name": "Model Forward Pass Verification",
     "status": "PASS",
-    "elapsed_sec": 0.113,
+    "elapsed_sec": 0.065,
     "details": "Shapes verified: Traffic (4, 207), Wildfire (4, 2)"
   },
   "test_5": {
     "name": "Training Pipeline Execution",
     "status": "PASS",
-    "elapsed_sec": 4.318,
+    "elapsed_sec": 12.952,
     "details": "Autograd gradients computed and optimizer steps successfully updated parameters"
   },
   "test_6": {
@@ -45,25 +45,25 @@
   "test_7": {
     "name": "Saved Model Loading Verification",
     "status": "PASS",
-    "elapsed_sec": 0.036,
+    "elapsed_sec": 0.035,
     "details": "Checkpoints verified for all deep models, loaded without parameter mismatch"
   },
   "test_8": {
     "name": "Prediction Pipeline Verification",
     "status": "PASS",
-    "elapsed_sec": 0.238,
+    "elapsed_sec": 0.057,
     "details": "Traffic: 207 sensor forecasts | Wildfire: Prob=1.0000 (Critical Risk)"
   },
   "test_9": {
     "name": "Evaluation Metric Calculation",
     "status": "PASS",
-    "elapsed_sec": 0.002,
+    "elapsed_sec": 0.001,
     "details": "Calculated actual MAE/RMSE/MAPE/R2 for Traffic and Acc/Prec/Recall/F1/ROC-AUC/PR-AUC for Wildfire"
   },
   "test_10": {
     "name": "Interactive Dashboard Execution",
     "status": "PASS",
-    "elapsed_sec": 0.018,
+    "elapsed_sec": 0.02,
     "details": "Dashboard responsive on port 8510 with HTTP 200 OK"
   }
 }

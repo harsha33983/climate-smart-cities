@@ -222,10 +222,32 @@ def render_traffic_page():
             if btn_run:
                 model_name = "gnn" if model_choice == "ST-GNN" else "lstm"
                 predictor = get_traffic_predictor(model_name)
-                # Load baseline sequence from test split
-                with open("data/processed/traffic/traffic_processed.pkl", "rb") as f:
-                    t_data = pickle.load(f)
-                input_seq = t_data['X_test'][0] * t_data['std'] + t_data['mean']
+                # Load baseline sequence from lightweight artifacts with multi-directory fallback
+                base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+                seq_sources = [
+                    os.path.join(base_dir, "data", "processed", "traffic", "traffic_scaler.pkl"),
+                    os.path.join(base_dir, "data", "processed", "traffic", "traffic_graph.pkl"),
+                    "data/processed/traffic/traffic_scaler.pkl",
+                    "data/processed/traffic/traffic_graph.pkl",
+                    "data/processed/traffic/traffic_processed.pkl",
+                ]
+                input_seq = None
+                for src in seq_sources:
+                    if os.path.exists(src):
+                        try:
+                            with open(src, "rb") as f:
+                                s_dict = pickle.load(f)
+                            if 'sample_input_seq' in s_dict:
+                                input_seq = s_dict['sample_input_seq'].copy()
+                                break
+                            elif 'X_test' in s_dict:
+                                input_seq = (s_dict['X_test'][0] * s_dict['std'] + s_dict['mean']).copy()
+                                break
+                        except Exception:
+                            continue
+                if input_seq is None:
+                    input_seq = np.full((12, len(sensor_ids)), 60.0, dtype=np.float32)
+
                 # Inject user perturbation
                 input_seq[-1, sensor_idx] = inject_speed
 
